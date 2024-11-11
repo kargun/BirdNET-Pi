@@ -8,7 +8,7 @@ import time
 import librosa
 import numpy as np
 
-from utils.helpers import get_settings, Detection
+from utils.helpers import get_settings, Detection, LocationTime
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
@@ -22,12 +22,13 @@ log = logging.getLogger(__name__)
 
 
 userDir = os.path.expanduser('~')
-INTERPRETER, M_INTERPRETER, INCLUDE_LIST, EXCLUDE_LIST = (None, None, None, None)
+INTERPRETER, M_INTERPRETER, INCLUDE_LIST, EXCLUDE_LIST, NOCTURNAL_LIST = (None, None, None, None, None)
 PREDICTED_SPECIES_LIST = []
 model, priv_thresh, sf_thresh = (None, None, None)
 
 mdata, mdata_params = (None, None)
 
+lt = LocationTime(get_settings().getfloat('LATITUDE'), get_settings().getfloat('LONGITUDE'))
 
 def loadModel():
 
@@ -310,9 +311,10 @@ def load_global_model():
 
 
 def run_analysis(file):
-    global INCLUDE_LIST, EXCLUDE_LIST
+    global INCLUDE_LIST, EXCLUDE_LIST, NOCTURNAL_LIST
     INCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/include_species_list.txt"))
     EXCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt"))
+    NOCTURNAL_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/nocturnal_species_list.txt"))
 
     conf = get_settings()
 
@@ -335,6 +337,8 @@ def run_analysis(file):
                     log.warning("Excluded as INCLUDE_LIST is active but this species is not in it: %s", entry[0])
                 elif entry[0] in EXCLUDE_LIST and len(EXCLUDE_LIST) != 0:
                     log.warning("Excluded as species in EXCLUDE_LIST: %s", entry[0])
+                elif entry[0] in NOCTURNAL_LIST and len(NOCTURNAL_LIST) != 0 and not lt.is_night(file.file_date):
+                    log.warning("Excluded as species in NOCTURNAL_LIST during daytime: %s", entry[0])
                 elif entry[0] not in PREDICTED_SPECIES_LIST and len(PREDICTED_SPECIES_LIST) != 0:
                     log.warning("Excluded as below Species Occurrence Frequency Threshold: %s", entry[0])
                 else:
