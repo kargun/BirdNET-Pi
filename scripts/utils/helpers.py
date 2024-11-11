@@ -7,6 +7,7 @@ from configparser import ConfigParser
 from itertools import chain
 
 from tzlocal import get_localzone
+from suntime import Sun
 
 _settings = None
 
@@ -118,3 +119,13 @@ def get_wav_files():
     open_recs = get_open_files_in_dir(rec_dir)
     files = [file for file in files if file not in open_recs]
     return files
+
+class LocationTime:
+    def __init__(self, lat, lon):
+        self.timezone = get_localzone()
+        self.sun = Sun(lat, lon)
+    def is_night(self, compare_time: datetime.datetime):
+        local_time = compare_time.astimezone(self.timezone)
+        sunrise_time = self.sun.get_sunrise_time(time_zone=self.timezone)
+        sunset_time = self.sun.get_sunset_time(time_zone=self.timezone)
+        return local_time < sunrise_time or local_time > sunset_time
