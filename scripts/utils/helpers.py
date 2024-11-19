@@ -126,6 +126,6 @@ class LocationTime:
         self.sun = Sun(lat, lon)
     def is_night(self, compare_time: datetime.datetime):
         local_time = compare_time.astimezone(self.timezone)
-        sunrise_time = self.sun.get_sunrise_time(time_zone=self.timezone)
-        sunset_time = self.sun.get_sunset_time(time_zone=self.timezone)
+        sunrise_time = self.sun.get_local_sunrise_time(local_time.date())
+        sunset_time = self.sun.get_local_sunset_time(local_time.date())
         return local_time < sunrise_time or local_time > sunset_time
